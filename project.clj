@@ -1,4 +1,4 @@
-(defproject protomic "0.1.0-SNAPSHOT"
+(defproject hden/protomic "0.1.0-SNAPSHOT"
   :description "Async client API for Datomic with Promesa."
   :url "https://github.com/hden/protomic"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
