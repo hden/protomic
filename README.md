@@ -1,6 +1,15 @@
 # protomic
+[![Clojars Project](https://img.shields.io/clojars/v/com.github.hden/protomic.svg)](https://clojars.org/com.github.hden/protomic)
 
 Async client API for Datomic with Promesa.
+
+## Install
+
+`[com.github.hden/protomic "0.1.0-SNAPSHOT"]`
+
+or
+
+`com.github.hden/protomic {:mvn/version "0.1.0-SNAPSHOT"}`
 
 ## Usage
 
