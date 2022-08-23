@@ -1,18 +1,45 @@
 (ns protomic.core
-  (:refer-clojure :exclude [sync])
-  (:require [clojure.core.async :as a :refer [go <!]]
+  (:refer-clojure :exclude [sync transduce])
+  (:require [clojure.core.async :as a :refer [go transduce <!]]
             [cognitect.anomalies :as anomalies]
             [datomic.client.api.async :as d]
             [promesa.core :as p]))
 
 (defn- error? [x]
-  (and
-    (map? x)
-    (::anomalies/category x)))
+  (or
+    (instance? Throwable x)
+    (and
+      (map? x)
+      (::anomalies/category x))))
 
-(defn- error-map->ex-info [m]
-  (let [message (get m ::anomalies/message "Unknown Anomaly.")]
-    (ex-info message m)))
+(defn- error->ex-info [x]
+  (cond
+    ;; passthrough
+    (instance? clojure.lang.ExceptionInfo x)
+    x
+
+    ;; converts to ExceptionInfo when possible
+    (instance? Throwable x)
+    (let [m (Throwable->map x)]
+      (ex-info (:cause m) m x))
+
+    (map? x)
+    (let [message (get x ::anomalies/message "Unknown anomaly.")]
+      (ex-info message x))
+
+    :else
+    (ex-info "Unknown anomaly." {::anomalies/message  "Unknown anomaly."
+                                 ::anomalies/category ::anomalies/fault})))
+
+(defn- drop-after [pred]
+  (fn [rf]
+    (fn
+      ([] (rf))
+      ([result] (rf result))
+      ([result input]
+       (if (pred input)
+         (reduced (rf result input))
+         (rf result input))))))
 
 (defn- wrap-one
   [f]
@@ -23,10 +50,10 @@
           (try
             (let [value-or-error (<! (apply f args))]
               (if (error? value-or-error)
-                (reject (error-map->ex-info value-or-error))
+                (reject (error->ex-info value-or-error))
                 (resolve value-or-error)))
             (catch Throwable ex
-              (reject ex))))))))
+              (reject (error->ex-info ex)))))))))
 
 (defn- wrap-many
   [f]
@@ -35,13 +62,15 @@
       (fn [resolve reject]
         (go
           (try
-            (let [chunks (<! (a/into [] (apply f args)))
-                  value-or-error (first chunks)]
-              (if (error? value-or-error)
-                (reject (error-map->ex-info value-or-error))
+            (let [chunks (<! (transduce (drop-after error?) conj [] (apply f args)))
+                  ;; If there is an error it will be in the channel instead of the chunk.
+                  ;; https://docs.datomic.com/client-api/datomic.client.api.async.html
+                  chunk-or-error (last chunks)]
+              (if (error? chunk-or-error)
+                (reject (error->ex-info chunk-or-error))
                 (resolve (mapcat identity chunks))))
             (catch Throwable ex
-              (reject ex))))))))
+              (reject (error->ex-info ex)))))))))
 
 (def connect (wrap-one d/connect))
 (def create-database (wrap-one d/create-database))
