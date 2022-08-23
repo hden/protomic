@@ -12,7 +12,7 @@
       (map? x)
       (::anomalies/category x))))
 
-(defn- error-map->ex-info [x]
+(defn- error->ex-info [x]
   (cond
     ;; passthrough
     (instance? clojure.lang.ExceptionInfo x)
@@ -50,10 +50,10 @@
           (try
             (let [value-or-error (<! (apply f args))]
               (if (error? value-or-error)
-                (reject (error-map->ex-info value-or-error))
+                (reject (error->ex-info value-or-error))
                 (resolve value-or-error)))
             (catch Throwable ex
-              (reject ex))))))))
+              (reject (error->ex-info ex)))))))))
 
 (defn- wrap-many
   [f]
@@ -67,10 +67,10 @@
                   ;; https://docs.datomic.com/client-api/datomic.client.api.async.html
                   chunk-or-error (last chunks)]
               (if (error? chunk-or-error)
-                (reject (error-map->ex-info chunk-or-error))
+                (reject (error->ex-info chunk-or-error))
                 (resolve (mapcat identity chunks))))
             (catch Throwable ex
-              (reject ex))))))))
+              (reject (error->ex-info ex)))))))))
 
 (def connect (wrap-one d/connect))
 (def create-database (wrap-one d/create-database))
