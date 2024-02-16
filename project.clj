@@ -8,7 +8,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [com.cognitect/anomalies "0.1.12"]
                  [com.datomic/client-cloud]
-                 [diehard "0.11.10"]
+                 [diehard "0.11.11"]
                  [funcool/promesa]]
   :repl-options {:init-ns protomic.core}
   :profiles
