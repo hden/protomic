@@ -5,7 +5,7 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :managed-dependencies [[com.datomic/client-cloud "1.0.138"]
                          [funcool/promesa "12.0.1"]]
-  :dependencies [[org.clojure/clojure "1.12.6"]
+  :dependencies [[org.clojure/clojure "1.12.7"]
                  [com.cognitect/anomalies "0.1.12"]
                  [com.datomic/client-cloud]
                  [diehard "0.11.12"]
